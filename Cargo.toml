@@ -2,5 +2,10 @@
 name = "rust-cli"
 version = "0.1.0"
 edition = "2021"
+description = "A simple grep CLI tool for Rust"
+license = "MIT"
 
 [dependencies]
+
+[profile.dev]
+opt-level = 0

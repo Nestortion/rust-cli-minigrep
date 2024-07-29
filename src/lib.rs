@@ -18,17 +18,24 @@ impl Config {
     }
 }
 
-pub fn parse_config(args: &[String]) -> Result<Config, &str> {
-    if args.len() < 3 {
-        Err("Not enough arguments")
-    } else {
-        let query_string = &args[1];
-        let file_path = &args[2];
+pub fn parse_config<'a>(mut args: impl Iterator<Item = String>) -> Result<Config, &'a str> {
+    args.next();
+    let query_string = match args.next() {
+        Some(query_string) => query_string,
+        None => return Err("Did not receive query string"),
+    };
+    let file_path = match args.next() {
+        Some(file_path) => file_path,
+        None => return Err("Did not receive file path"),
+    };
 
-        let case_sensitive = env::var("CASE_INSENSITIVE").is_ok();
+    let case_sensitive = env::var("CASE_INSENSITIVE").is_ok();
 
-        Ok(Config::new(query_string, file_path, case_sensitive))
-    }
+    Ok(Config::new(
+        query_string.as_str(),
+        file_path.as_str(),
+        case_sensitive,
+    ))
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
@@ -48,28 +55,18 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 pub fn search<'a>(contents: &'a str, word_to_search: &str) -> Vec<&'a str> {
-    let mut lines_with_word = Vec::new();
-
-    for line in contents.lines() {
-        if line.contains(word_to_search) {
-            lines_with_word.push(line);
-        }
-    }
-
-    lines_with_word
+    contents
+        .lines()
+        .filter(|line| line.contains(word_to_search))
+        .collect()
 }
 
 pub fn search_insensitive<'a>(contents: &'a str, word_to_search: &str) -> Vec<&'a str> {
-    let mut lines_with_word = Vec::new();
-
-    for line in contents.lines() {
-        if line
-            .to_lowercase()
-            .contains(word_to_search.to_lowercase().as_str())
-        {
-            lines_with_word.push(line);
-        }
-    }
-
-    lines_with_word
+    contents
+        .lines()
+        .filter(|line| {
+            line.to_lowercase()
+                .contains(word_to_search.to_lowercase().as_str())
+        })
+        .collect()
 }
